@@ -33,94 +33,79 @@ app.mount("/media", StaticFiles(directory="media"),name="media")  # source file 
 # will look for template in our templates directory we made
 templates = Jinja2Templates(directory="templates")
 
-# dummy data as dict
-# posts: list[dict] = [
-#     {
-#         "id": 1,
-#         "author": "Khadija Noor",
-#         "title": "FastAPI is Awesome",
-#         "content": "This framework is really easy to use and super fast.",
-#         "date_posted": "April 20, 2025",
-#     },
-#     {
-#         "id": 2,
-#         "author": "Jane Doe",
-#         "title": "Python is Great for Web Development",
-#         "content": "Python is a great language for web development, and FastAPI makes it even better.",
-#         "date_posted": "April 21, 2025",
-#     },
-# ]
-
-
-# =================================== Video 1 content ========================================
-
-
-
-# #decorator and we are decorating home function with it its base route
-# @app.get("/")
-# def home():
-#   return {"message":"Hello World!!"}
-
-#decorator and we are decorating home function with it its base route but with html response
-# @app.get("/", response_class=HTMLResponse, include_in_schema=False)
-# @app.get("/posts", response_class=HTMLResponse, include_in_schema=False)
-#if we want same thing on different rout we can do by using multiple decorators so on / and on /post same thing will dsiplay
-# def home():
-#   return f"<h1>{posts[0]['title']}</h1>"
-
-#enpoint to get posts and if we search using this  http://127.0.0.1:8000/api/posts we can find it
-# @app.get("/api/posts")
-# def get_post():
-#     return posts
-
-
-
-
-# =================================== Video 2 content ========================================
 
 
 # response_class=HTMLResponse
 
 
 # name attribute purpose is that when we clicking eithrer two of then they ahow samw /posts for both also for / so we give then distinguish name
-@app.get("/",  include_in_schema=False, name='home')
-@app.get("/posts",  include_in_schema=False, name='post')
+@app.get("/", include_in_schema=False, name="home")
+@app.get("/posts", include_in_schema=False, name="posts")
 
 #---- fastapi hml template data fetching and passing
 # api to get html temlplate for for all post
 # we can add request that help fastapi to find template in out directory also we pass data as dict of post so that we can use it
-def home(request: Request):
-  return templates.TemplateResponse(
-    request,
-    "home.html", 
-    {
-        "posts": posts, 
-        "title": "Home"
-    })
-
+## home
+def home(request: Request, db: Annotated[Session, Depends(get_db)]):
+    result = db.execute(select(models.Post))
+    posts = result.scalars().all()
+    return templates.TemplateResponse(
+        request,
+        "home.html",
+        {"posts": posts, "title": "Home"},
+    )
 
 
 # note we are making two routes for each api one  for html template /posts and on for json api api/posts
 
+
+ ## post_page
 #---- fastapi hml template data fetching and passing
 # api to get html temlplate for single post
 # we can add request that help fastapi to find template in out directory also we pass data as dict of post so that we can use it
-@app.get("/posts/{post_id}",  include_in_schema=False)
-def post_page(request: Request, post_id: int):
-    for post in posts:
-        # is the post id from data while the post_id is out varaible parameter
-        if post.get("id") == post_id:
-            #we need the title from data and only 50 characters
-            title= post["title"][:50]
-            return templates.TemplateResponse(
-                request,
-                "post.html",
-                 {
-                    "post": post, 
-                    "title": title
-                 })
+
+@app.get("/posts/{post_id}", include_in_schema=False)
+def post_page(request: Request, post_id: int, db: Annotated[Session, Depends(get_db)]):
+    # is the post id from data while the post_id is out varaible parameter
+    result = db.execute(select(models.Post).where(models.Post.id == post_id))
+    post = result.scalars().first()
+    if post:
+         #we need the title from data and only 50 characters
+        title = post.title[:50]
+        return templates.TemplateResponse(
+            request,
+            "post.html",
+            {"post": post, "title": title},
+        )
+    
      # return {"error": "Post not found"} wrong way
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+
+
+
+## user_posts_page (for a single user post to view)
+@app.get("/users/{user_id}/posts", include_in_schema=False, name="user_posts")
+def user_posts_page(
+    request: Request,
+    user_id: int,
+    db: Annotated[Session, Depends(get_db)],
+):
+    result = db.execute(select(models.User).where(models.User.id == user_id))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    result = db.execute(select(models.Post).where(models.Post.user_id == user_id))
+    posts = result.scalars().all()
+    return templates.TemplateResponse(
+        request,
+        "user_posts.html",
+        {"posts": posts, "user": user, "title": f"{user.username}'s Posts"},
+    )
+
 
 
 ## Create User
@@ -160,16 +145,16 @@ def create_user(user: UserCreate, db: Annotated[Session, Depends(get_db)]):   # 
             detail="Email already exists",
         )  
 
-     new_user = models.User(
+    new_user = models.User(
         username= user.username,
         email= user.email,
      )   
 
-     db.add(new_user)
-     db.commit()
-     db.refresh(new_user)    # db refresh the new object   
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)    # db refresh the new object   
 
-     return new_user  # when we return pydnatic alreacy convert it to UserResponse model                                          
+    return new_user  # when we return pydnatic alreacy convert it to UserResponse model                                          
                                                                     
 
 # get user api
@@ -181,9 +166,9 @@ def get_user(user_id: int,db: Annotated[Session, Depends(get_db)]):
         select(models.User).where(models.User.id == user_id),    # get data from model to check add query
         )        
 
-     user= result.scalars().first()
+    user= result.scalars().first()
 
-     if user:
+    if user:
         return user
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")      
 
@@ -207,52 +192,41 @@ def get_user_posts(user_id: int, db: Annotated[Session, Depends(get_db)]):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# # json api to get all post
-# #endpoint to get posts and if we search using this  http://127.0.0.1:8000/api/posts we can find it
-# @app.get("/api/posts",)
-# def get_posts():
-#     return posts 
-
-
 # json api to get all post
 #endpoint to get posts and if we search using this  http://127.0.0.1:8000/api/posts we can find it
 # response_model=list[PostResponse]  -> this make sure each post follow same schema or have all attributes 
+## get_posts
 @app.get("/api/posts", response_model=list[PostResponse])
-def get_posts():
-    return posts 
+def get_posts(db: Annotated[Session, Depends(get_db)]):
+    result = db.execute(select(models.Post))
+    posts = result.scalars().all()
+    return posts
 
 
-    ## Create Post
+ ## Create Post
+## create_post
 @app.post(
     "/api/posts",
     response_model=PostResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_post(post: PostCreate):
-    new_id = max(p["id"] for p in posts) + 1 if posts else 1
-    new_post = {
-        "id": new_id,
-        "author": post.author,
-        "title": post.title,
-        "content": post.content, 
-        "date_posted": "April 23, 2025",
-    }
-    posts.append(new_post)
+def create_post(post: PostCreate, db: Annotated[Session, Depends(get_db)]):
+    result = db.execute(select(models.User).where(models.User.id == post.user_id))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    new_post = models.Post(
+        title=post.title,
+        content=post.content,
+        user_id=post.user_id,
+    )
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
     return new_post
 
 
@@ -260,11 +234,11 @@ def create_post(post: PostCreate):
 #endpoint to get a single post by a url parameters but json not html
 # response_model=PostResponse ->  here we are doing same but here we don't use list as we have a single post
 @app.get("/api/posts/{post_id}", response_model=PostResponse)
-def get_post(post_id: int):
-    for post in posts:
-        if post.get("id") == post_id:
-          return post
-    # return {"error": "Post not found"} wrong way
+def get_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
+    result = db.execute(select(models.Post).where(models.Post.id == post_id))
+    post = result.scalars().first()
+    if post:
+        return post
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
 
 
