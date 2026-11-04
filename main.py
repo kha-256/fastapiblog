@@ -58,6 +58,14 @@ def home(request: Request, db: Annotated[Session, Depends(get_db)]):
 
 # note we are making two routes for each api one  for html template /posts and on for json api api/posts
 
+# note 
+#response_model is a Pydantic validation layer that:
+# Validates and serializes the return value into JSON
+# Shows the schema in Swagger docs (/docs)
+#But 
+# user_posts_page
+# on line 87 returns a TemplateResponse — which is an HTML response rendered by Jinja2. FastAPI passes it through directly without any JSON serialization, so response_model would have no effect and would actually cause errors if applied.
+# Also notice it has include_in_schema=False — it's hidden from the API docs entirely, because it's a UI page, not an API endpoint.
 
  ## post_page
 #---- fastapi hml template data fetching and passing
@@ -123,7 +131,7 @@ def create_user(user: UserCreate, db: Annotated[Session, Depends(get_db)]):   # 
         select(models.User).where(models.User.username == user.username),    # get data from model to check add query
         )          
 
-    existing_user = result.scalar().first
+    existing_user = result.scalars().first()
 
     if existing_user:
         raise HTTPException(
@@ -137,7 +145,7 @@ def create_user(user: UserCreate, db: Annotated[Session, Depends(get_db)]):   # 
         select(models.User).where(models.User.email == user.email),    # get data from model to check add query
         )          
 
-    existing_email = result.scalar().first
+    existing_email = result.scalars().first()
 
     if existing_email:
         raise HTTPException(
@@ -159,7 +167,7 @@ def create_user(user: UserCreate, db: Annotated[Session, Depends(get_db)]):   # 
 
 # get user api
 
-@app.get("/api/users/{user_id}", response_model=PostResponse)
+@app.get("/api/users/{user_id}", response_model=UserResponse)
 def get_user(user_id: int,db: Annotated[Session, Depends(get_db)]):   
       # we need to check if user  exist                                                                      
     result= db.execute(

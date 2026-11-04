@@ -26,14 +26,18 @@ class User(Base):                   # inherits from Base so SQLAlchemy tracks th
     )
 
     posts: Mapped[list[Post]] = relationship(back_populates="author")               # one user -> many posts also we eaw usin[Post] before its define below so this version of python allows it called forward refernce
-                                                                                    # in mapped we define type that posts are the list and set relationship ship with author so all post of this author
                                                                                     # we will use it like user.post to get all user post
+
+# Primary & Foreign Keys enforce rules in SQL so your database doesn't store broken data.
+# Mapped[...] + relationship() stop you from writing manual SQL queries every time you want to jump between a user and their posts in Python.                                                                          # in mapped we define type that posts are the list and set relationship ship with author so all post of this author
+                                                                                    
 
     @property
     def image_path(self) -> str:                                                    # helper to return full image URL
         if self.image_file:
             return f"/media/profile_pics/{self.image_file}"                         #user uploaded image
         return "/static/profile_pics/default.jpg"                                   # if not then this  fallback to default avatar
+
 
 
 class Post(Base):                   # each instance = one row in posts table
