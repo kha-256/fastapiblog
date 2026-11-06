@@ -16,17 +16,18 @@ class User(Base):                   # inherits from Base so SQLAlchemy tracks th
     __tablename__ = "users"         # actual table name in the database
 
     # Mapped[type] = python type hint | mapped_column(...) = actual DB column config
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)          # unique row id, auto-incremented
-    username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)  # max 50 chars, must be unique
-    email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)    # max 120 chars, must be unique
-    image_file: Mapped[str | None] = mapped_column(                                 # Mapped[str | None] = can be null we are saving image name insted of full paths
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)            # unique row id, auto-incremented
+    username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)    # max 50 chars, must be unique
+    email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)      # max 120 chars, must be unique
+    image_file: Mapped[str | None] = mapped_column(                                   # Mapped[str | None] = can be null we are saving image name insted of full paths
         String(200),
-        nullable=True,                                                              # optional field
-        default=None,                                                               # defaults to no image
+        nullable=True,                                                                # optional field
+        default=None,                                                                 # defaults to no image
     )
 
-    posts: Mapped[list[Post]] = relationship(back_populates="author")               # one user -> many posts also we eaw usin[Post] before its define below so this version of python allows it called forward refernce
-                                                                                    # we will use it like user.post to get all user post
+    posts: Mapped[list[Post]] = relationship(back_populates="author", cascade="all, delete-orphan")      # one user -> many posts also we eaw usin[Post] before its define below so this version of python allows it called forward refernce
+                                                                                                         # we will use it like user.post to get all user post
+                                                                                                         # cascade="all, delete-orphan" -> mean is user delete all post of that user
 
 # Primary & Foreign Keys enforce rules in SQL so your database doesn't store broken data.
 # Mapped[...] + relationship() stop you from writing manual SQL queries every time you want to jump between a user and their posts in Python.                                                                          # in mapped we define type that posts are the list and set relationship ship with author so all post of this author

@@ -22,7 +22,13 @@ class UserResponse(UserBase):
     image_path: str   # this is not a column of table but a property if se see in model as a function
                       # from attributes= true also has advanatge as it allows to read property
      
-    
+# user update schema
+
+class UserUpdate(BaseModel):
+    username: str | None = Field(default=None,min_length=1, max_length=50)
+    email: EmailStr | None = Field(default=None, max_length=120)      # emailStr auto check type email
+    image_file: str | None = Field(default=None,min_length=1, max_length=200)
+   
 
 
 
@@ -50,3 +56,10 @@ class PostResponse(PostBase):
     user_id: int
     date_posted: datetime  # date time is also seralized for ISO 8601 format so no need for conversions Standard we 
     author: UserResponse    # pytdenatoc will see author field for its author it validated the user object aginst userresponese and add user data in our api reponse so we get the user json also
+
+
+class PostUpdate(BaseModel):
+    # default=None mean field can either be empty
+    title: str | None = Field(default=None, min_length=1, max_length=100)
+    content: str | None = Field(default=None,min_length=1)
+  
