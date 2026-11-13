@@ -1,24 +1,27 @@
-## database.py
-from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+## database.py imports (async)
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./blog.db"
+SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///./blog.db"
 
-engine = create_engine(                        #establish connection here
+engine =  create_async_engine(                        #establish connection here
     SQLALCHEMY_DATABASE_URL,                      
     connect_args={"check_same_thread": False},  # since fast api and postgress handle multiple threads unlike sqllite that why we are turning it false
 )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)    # seesion maker is a libraty for sessions
-                                                                               # session is transaction with database and each request has its own session
-                                                                               # by turning autocommit and autoflush false mean we want to control when chnages are commited as  standard pattern
-
+AsyncSessionLocal = async_sessionmaker(                           # session maker is a libraty for sessions
+    engine,                                                            # session is transaction with database and each request has its own session
+    class_=AsyncSession,
+    expire_on_commit=False    # recommended for async as it deal will deal with expired object on commit
+)    
+                                                                                       
+                                                                               
 
 class Base(DeclarativeBase):  # parent class for all models, maps Python classes to DB tables
     pass
 
 
-def get_db():                       # dependency that provides a DB session to each request
-    with SessionLocal() as db:      # opens a new session
-        yield db                    # passes session to route, then closes it automatically after
+async def get_db():                       # dependency that provides a DB session to each request
+    async with AsyncSessionLocal() as session:      # opens a new session
+        yield session                    # passes session to route, then closes it automatically after
                                     # this function auto cleanup if any erroe occur in request
