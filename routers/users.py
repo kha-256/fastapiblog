@@ -16,7 +16,7 @@ router = APIRouter()  # use for decorating routes instead of app
 
 ## Create User
 @router.post(
-    "/api/users",
+    "",
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
 )
