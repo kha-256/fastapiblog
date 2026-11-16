@@ -10,17 +10,17 @@
              width="64"
              height="64"
              loading="lazy">
-        <div class="flex-grow-1">
+        <div class="flex-grow-1" style="min-width:0;overflow:hidden;">
           <div class="article-metadata mb-2">
             <a class="me-2"
                href="{{ url_for('user_posts', user_id=post.author.id) }}">{{ post.author.username }}</a>
             <small class="text-body-secondary">{{ post.date_posted.strftime("%B %d, %Y") }}</small>
           </div>
-          <h2>
+          <h2 style="overflow-wrap:break-word;word-break:break-word;">
             <a class="article-title"
                href="{{ url_for('post_page', post_id=post.id) }}">{{ post.title }}</a>
           </h2>
-          <p class="article-content">{{ post.content }}</p>
+          <p class="article-content" style="overflow-wrap:break-word;word-break:break-word;">{{ post.content }}</p>
         </div>
       </div>
     </article>

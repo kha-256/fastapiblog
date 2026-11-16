@@ -18,9 +18,7 @@ AsyncSessionLocal = async_sessionmaker(  # session maker is a libraty for sessio
 )
 
 
-class Base(
-    DeclarativeBase
-):  # parent class for all models, maps Python classes to DB tables
+class Base(DeclarativeBase):  # parent class for all models, maps Python classes to DB tables
     pass
 
 

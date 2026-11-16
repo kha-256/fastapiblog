@@ -87,6 +87,7 @@ button:focus-visible {
   box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05);
   transition: box-shadow 0.15s ease, transform 0.15s ease,
     border-color 0.15s ease;
+  overflow: hidden; /* hard backstop: nothing bleeds outside the card */
 }
 
 .content-section:hover {
@@ -94,10 +95,19 @@ button:focus-visible {
   border-color: var(--color-border-light);
 }
 
+/* Fix flex-child min-width so word-break can actually work */
+.content-section .flex-grow-1 {
+  min-width: 0;
+}
+
 /* Articles */
-.article-title {
+.article-title,
+a.article-title {
   color: var(--color-text-heading);
   transition: color 0.2s ease-in-out;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  display: block; /* anchors are inline by default; block allows wrapping */
 }
 
 a.article-title:hover,
@@ -109,6 +119,8 @@ a.article-title:focus {
 .article-content {
   white-space: pre-line;
   font-size: 1.25rem;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .article-img {
@@ -292,4 +304,10 @@ a.article-title:focus {
 .modal-header.bg-success .modal-title,
 .modal-header.bg-danger .modal-title {
   color: #ffffff !important;
+}
+
+/* Prevent long unbreakable text from overflowing modal body */
+.modal-body p {
+  overflow-wrap: break-word;
+  word-break: break-word;
 }

@@ -4,13 +4,13 @@
   <div class="d-flex align-items-start gap-4">
     <img class="rounded-circle article-img flex-shrink-0" src="{{ post.author.image_path }}"
       alt="{{ post.author.username }}'s profile picture" width="64" height="64" loading="lazy">
-    <div class="flex-grow-1">
+    <div class="flex-grow-1" style="min-width:0;overflow:hidden;">
       <div class="article-metadata mb-2">
         <a class="me-2" href="{{url_for('user_posts', user_id= post.author.id)}}">{{ post.author.username }}</a>
         <small class="text-body-secondary">{{ post.date_posted.strftime('%B %d, %Y') }}</small>
       </div>
-      <h2 class="article-title">{{ post.title }}</h2>
-      <p class="article-content">{{ post.content }}</p>
+      <h2 class="article-title" style="overflow-wrap:break-word;word-break:break-word;">{{ post.title }}</h2>
+      <p class="article-content" style="overflow-wrap:break-word;word-break:break-word;">{{ post.content }}</p>
       <!-- Only show edit/delete options if user_id is 1 (TEMPORARY - until authentication) -->
       {% if post.user_id == 1 %}
       <div class="post-actions mt-3 pt-3 border-top">
