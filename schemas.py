@@ -10,20 +10,23 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    pass
+    password: str= Field(min_length=8)
 
 
-class UserResponse(UserBase):
+class UserPublic(BaseModel):
     # we use configdict in pydatic 2 because in pytin we read data in dict like post["title"]
     # but when we read data from data base we use post.title
     # so here we  are turning from_attributes true so that it can read dot notation also
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    username:str
     image_file: str | None
     image_path: str  # this is not a column of table but a property if se see in model as a function
     # from attributes= true also has advanatge as it allows to read property
 
+class UserPrivate(UserPublic):
+    email: EmailStr
 
 # user update schema
 
@@ -34,6 +37,10 @@ class UserUpdate(BaseModel):
         default=None, max_length=120
     )  # emailStr auto check type email
     image_file: str | None = Field(default=None, min_length=1, max_length=200)
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str 
 
 
 class PostBase(BaseModel):
@@ -60,7 +67,7 @@ class PostResponse(PostBase):
     id: int
     user_id: int
     date_posted: datetime  # date time is also seralized for ISO 8601 format so no need for conversions Standard we
-    author: UserResponse  # pytdenatoc will see author field for its author it validated the user object aginst userresponese and add user data in our api reponse so we get the user json also
+    author: UserPublic # pytdenatoc will see author field for its author it validated the user object aginst userresponese and add user data in our api reponse so we get the user json also
 
 
 class PostUpdate(BaseModel):

@@ -26,6 +26,9 @@ class User(Base):  # inherits from Base so SQLAlchemy tracks this as a DB table
     email: Mapped[str] = mapped_column(
         String(120), unique=True, nullable=False
     )  # max 120 chars, must be unique
+    password_hash: Mapped[str] = mapped_column(
+        String(200),  nullable=False
+    ) 
     image_file: Mapped[str | None] = (
         mapped_column(  # Mapped[str | None] = can be null we are saving image name insted of full paths
             String(200),
