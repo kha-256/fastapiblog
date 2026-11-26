@@ -6,6 +6,14 @@ from pwdlib import PasswordHash
 
 from config import settings
 
+from typing import Annotated
+from fastapi import Depends, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+import models
+from database import get_db
+
 
 password_hash= PasswordHash.recommended()   # create a password hasher recommended using argon2
 
@@ -54,3 +62,51 @@ def verify_access_token(token: str) -> str | None:
         return None
     else:
         return payload.get("sub")   # sub is userId we returb
+
+
+# will use verify access token here
+# every route that uses this dependency will automatically check token validity and get full user object
+## get_current_user
+async def get_current_user(
+    token: Annotated[str, Depends(oauth2_scheme)],  # get token from header
+    db: Annotated[AsyncSession, Depends(get_db)],   # need session to execute databse query
+) -> models.User:
+    user_id = verify_access_token(token)   #get userid from token
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    try:
+        user_id_int = int(user_id)   # convert userid to integer as it is string in token
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    result = await db.execute(
+        select(models.User).where(models.User.id == user_id_int), # find user from database table and return user object
+    )
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+
+# as get_current_user is use in route so intead of repeating code like this in every route
+# ❌ Without Annotated — repetitive in every route
+# def get_me(user: models.User = Depends(get_current_user)):
+#    ...
+#def update_me(user: models.User = Depends(get_current_user)):
+
+# we will use DRY priciple hete define once and will use just user:CurrentUser
+# as get_current_user return user object so we pass models.User as type hint as it will hanle type valistion for data
+CurrentUser= Annotated[models.User, Depends(get_current_user)]

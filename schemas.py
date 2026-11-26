@@ -50,7 +50,7 @@ class PostBase(BaseModel):
 
 
 class PostCreate(PostBase):
-    user_id: int  # TEMPORARTY
+    pass
 
 
 # what response we get from api  so this schema is for
